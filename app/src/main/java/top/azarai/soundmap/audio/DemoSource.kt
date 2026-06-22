@@ -27,11 +27,11 @@ private const val BURST_SEC = 0.12f
 private const val FADE_SEC = 0.005f
 
 /** A 1 kHz tone burst, 120 ms on / 380 ms off, with short fades to avoid clicks. */
-internal class BeepSource(private val sampleRate: Int, private val freq: Float = 1000f) : DemoSource {
+internal class BeepSource(private val sampleRate: Int) : DemoSource {
     private val period = (CYCLE_SEC * sampleRate).toLong()
     private val onLen = (BURST_SEC * sampleRate).toLong()
     private val fade = (FADE_SEC * sampleRate).toLong().coerceAtLeast(1)
-    private val freqPhasePerSample = 2.0 * PI * freq / sampleRate
+    private val freqPhasePerSample = 2.0 * PI * 1000f / sampleRate
     private var t = 0L
 
     override fun read(out: FloatArray, n: Int) {
