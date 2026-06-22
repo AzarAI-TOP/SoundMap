@@ -1,74 +1,54 @@
 package top.azarai.soundmap.audio
 
-import android.content.Context
-import android.util.Log
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
-/** What actually attached, surfaced to the UI and the on-device go/no-go check. */
-data class EngineStatus(
-    /** Whether DUMP is granted — required to discover other apps' real session ids. */
-    val dumpGranted: Boolean,
-    /** Sessions we currently hold an effect chain on (incl. the global-0 fallback). */
-    val sessionCount: Int,
-    /** Of those, how many actually got at least one effect attached. */
-    val attachedSessions: Int,
-    val anyEffectAttached: Boolean,
-)
-
-/** Observable snapshot of the engine, surfaced to the UI. */
+/** Observable snapshot of the demo player, surfaced to the UI. */
 data class EngineState(
-    val enabled: Boolean = false,
+    val playing: Boolean = false,
     val position: DialPosition = DialPosition.CENTER,
-    val status: EngineStatus? = null,
+    val sourceId: DemoSourceId = DemoSourceId.BEEP,
+    val error: String? = null,
 )
 
 /**
- * Process-wide owner of the audio effect. The effects live in the app process; the
- * foreground service exists only to keep that process alive and show a notification.
- * UI and service both go through this single source of truth.
+ * Process-wide owner of the demo player. The [BinauralPlayer] renders our own audio, so the
+ * spatial effect is baked into the samples and reaches any output (incl. Bluetooth). The
+ * foreground service only keeps the process alive while playing.
  */
 object SoundMapEngine {
 
-    private var manager: SessionEffectManager? = null
+    private var player: BinauralPlayer? = null
 
     private val _state = MutableStateFlow(EngineState())
     val state: StateFlow<EngineState> = _state.asStateFlow()
 
-    /** Turns the effect on at [position] and reports what attached. */
-    fun enable(context: Context, position: DialPosition): EngineStatus {
-        val mgr = manager ?: SessionEffectManager(context).also {
-            it.onChanged = { refreshStatus() }
-            manager = it
-        }
-        mgr.start(SpatialMapping.mapToParams(position))
-        val status = mgr.status()
-        Log.i("SoundMapSession", "enable(position=$position) -> status=$status")
-        _state.value = EngineState(enabled = true, position = position, status = status)
-        return status
+    /** Starts playback of the current source at the current position. */
+    fun play(): EngineState {
+        val p = player ?: BinauralPlayer().also { player = it }
+        p.setSource(_state.value.sourceId)
+        val ok = p.start(_state.value.position)
+        _state.update { it.copy(playing = ok, error = if (ok) null else "无法初始化音频输出") }
+        return _state.value
     }
 
-    /** Live-updates the effect as the user moves the dial. */
-    fun update(position: DialPosition) {
-        val mgr = manager
-        if (mgr == null || !_state.value.enabled) {
-            _state.update { it.copy(position = position) }
-            return
-        }
-        mgr.apply(SpatialMapping.mapToParams(position))
-        _state.update { it.copy(position = position, status = mgr.status()) }
+    /** Stops playback; audio output ends. */
+    fun stop() {
+        player?.stop()
+        _state.update { it.copy(playing = false) }
     }
 
-    /** Releases the effect; audio returns to normal. */
-    fun disable() {
-        manager?.stop()
-        _state.update { it.copy(enabled = false, status = manager?.status()) }
+    /** Moves the sound around the listener (live while playing). */
+    fun setPosition(position: DialPosition) {
+        player?.setPosition(position)
+        _state.update { it.copy(position = position) }
     }
 
-    private fun refreshStatus() {
-        val mgr = manager ?: return
-        _state.update { it.copy(status = mgr.status()) }
+    /** Swaps which demo sound plays (takes effect on the next block). */
+    fun setSource(id: DemoSourceId) {
+        player?.setSource(id)
+        _state.update { it.copy(sourceId = id) }
     }
 }

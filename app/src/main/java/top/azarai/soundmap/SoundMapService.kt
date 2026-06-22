@@ -26,7 +26,7 @@ class SoundMapService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
             ACTION_STOP -> {
-                SoundMapEngine.disable()
+                SoundMapEngine.stop()
                 stopSelf()
                 return START_NOT_STICKY
             }
@@ -37,8 +37,8 @@ class SoundMapService : Service() {
 
     private fun startInForeground() {
         createChannel()
-        val type = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
+        val type = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
         } else {
             0
         }
@@ -78,8 +78,8 @@ class SoundMapService : Service() {
     }
 
     override fun onDestroy() {
-        // Safety net: never leave global effects attached if the service dies.
-        SoundMapEngine.disable()
+        // Safety net: stop playback if the service dies.
+        SoundMapEngine.stop()
         super.onDestroy()
     }
 

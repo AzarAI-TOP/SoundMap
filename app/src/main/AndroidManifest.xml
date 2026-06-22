@@ -2,18 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
-    <!--
-      Signature-level: cannot be granted at install. Lets us read other apps' real audio
-      session ids so the effect can attach to them (Wavelet-style). Grant once via:
-        adb shell pm grant top.azarai.soundmap android.permission.DUMP
-      Without it, coverage falls back to opt-in broadcasts + the legacy global session.
-    -->
-    <uses-permission
-        android:name="android.permission.DUMP"
-        tools:ignore="ProtectedPermissions" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
@@ -37,10 +27,6 @@
         <service
             android:name=".SoundMapService"
             android:exported="false"
-            android:foregroundServiceType="specialUse">
-            <property
-                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                android:value="Applies a system-wide spatial audio effect while enabled by the user." />
-        </service>
+            android:foregroundServiceType="mediaPlayback" />
     </application>
 </manifest>

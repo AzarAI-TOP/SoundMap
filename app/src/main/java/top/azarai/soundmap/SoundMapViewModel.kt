@@ -7,15 +7,13 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import top.azarai.soundmap.audio.DemoSourceId
 import top.azarai.soundmap.audio.DialPosition
 import top.azarai.soundmap.audio.EngineState
 import top.azarai.soundmap.audio.SoundMapEngine
 import top.azarai.soundmap.data.SettingsStore
 
-/**
- * Bridges the UI and the [SoundMapEngine] / foreground service, and persists the last
- * on/off state and dial position via [SettingsStore].
- */
+/** Bridges the UI to [SoundMapEngine] / the foreground service and persists position + source. */
 class SoundMapViewModel(app: Application) : AndroidViewModel(app) {
 
     private val store = SettingsStore(app)
@@ -25,34 +23,32 @@ class SoundMapViewModel(app: Application) : AndroidViewModel(app) {
     init {
         viewModelScope.launch {
             val saved = store.state.first()
-            SoundMapEngine.update(saved.position)
-            if (saved.enabled && !SoundMapEngine.state.value.enabled) {
-                enable()
-            }
+            SoundMapEngine.setSource(saved.sourceId)
+            SoundMapEngine.setPosition(saved.position)
         }
-        // Persist state shortly after it settles, so dragging doesn't hammer disk.
+        // Persist position + source after they settle; never auto-plays.
         viewModelScope.launch {
             SoundMapEngine.state.debounce(400).collect { s ->
-                store.save(s.enabled, s.position)
+                store.save(s.position, s.sourceId)
             }
         }
     }
 
     fun toggle() {
-        if (state.value.enabled) disable() else enable()
+        if (state.value.playing) {
+            SoundMapEngine.stop()
+            SoundMapService.stop(getApplication())
+        } else {
+            SoundMapEngine.play()
+            if (state.value.playing) SoundMapService.start(getApplication())
+        }
     }
 
     fun onPositionChange(position: DialPosition) {
-        SoundMapEngine.update(position)
+        SoundMapEngine.setPosition(position)
     }
 
-    private fun enable() {
-        SoundMapEngine.enable(getApplication(), state.value.position)
-        SoundMapService.start(getApplication())
-    }
-
-    private fun disable() {
-        SoundMapEngine.disable()
-        SoundMapService.stop(getApplication())
+    fun onSourceChange(id: DemoSourceId) {
+        SoundMapEngine.setSource(id)
     }
 }
