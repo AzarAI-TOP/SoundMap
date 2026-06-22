@@ -50,14 +50,22 @@ class BinauralProcessorTest {
 
     @Test
     fun distance_addsReverbTail() {
-        val far = process(angle = 0f, radius = 1f)
-        val near = process(angle = 0f, radius = 0f)
-        // Tail well after the direct impulse (and any ITD): reverb should ring for "far".
+        val len = 8192
+        fun render(radius: Float): FloatArray {
+            val proc = BinauralProcessor(sr)
+            proc.setTarget(BinauralMapping.map(DialPosition(0f, radius), sr), snap = true)
+            val mono = FloatArray(len).also { it[0] = 1f }
+            val out = FloatArray(2 * len)
+            proc.process(mono, len, out)
+            return out
+        }
         fun tail(out: FloatArray): Float {
             var s = 0f
-            for (k in 200 until n) { s += abs(out[2 * k]) + abs(out[2 * k + 1]) }
+            for (k in 2000 until len) { s += abs(out[2 * k]) + abs(out[2 * k + 1]) }
             return s
         }
+        val far = render(1f)
+        val near = render(0f)
         assertTrue("far has audible reverb tail", tail(far) > 1e-3f)
         assertTrue("far tail exceeds near tail", tail(far) > tail(near))
     }
