@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">SoundMap</string>
+    <string name="service_channel_name">SoundMap effect</string>
+    <string name="service_notification_title">SoundMap active</string>
+    <string name="service_notification_text">Spatial effect is shaping your audio.</string>
+    <string name="service_stop_action">Stop</string>
+</resources>
