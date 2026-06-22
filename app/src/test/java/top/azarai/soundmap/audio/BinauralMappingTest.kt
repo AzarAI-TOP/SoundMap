@@ -33,6 +33,7 @@ class BinauralMappingTest {
         assertTrue(p.rightDelaySamples > 0f)
         assertEquals(0f, p.leftDelaySamples, 1e-4f)
         assertTrue(p.rightGain < p.leftGain)
+        assertTrue("right ear more low-passed", p.rightCutoffHz < p.leftCutoffHz)
     }
 
     @Test

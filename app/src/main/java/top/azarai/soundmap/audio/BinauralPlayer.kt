@@ -2,7 +2,6 @@ package top.azarai.soundmap.audio
 
 import android.media.AudioAttributes
 import android.media.AudioFormat
-import android.media.AudioManager
 import android.media.AudioTrack
 import android.os.Process
 import android.util.Log
@@ -15,6 +14,7 @@ import android.util.Log
 class BinauralPlayer(private val sampleRate: Int = 48000) {
 
     private val processor = BinauralProcessor(sampleRate)
+    // reassigned wholesale from the UI thread; the audio loop picks up the new source on its next block
     @Volatile private var source: DemoSource = DemoSourceId.BEEP.create(sampleRate)
     @Volatile private var running = false
     private var track: AudioTrack? = null
@@ -29,6 +29,7 @@ class BinauralPlayer(private val sampleRate: Int = 48000) {
     }
 
     /** @return true if playback started (AudioTrack initialized), false otherwise. */
+    @Synchronized
     fun start(initial: DialPosition): Boolean {
         if (running) return true
         processor.setTarget(BinauralMapping.map(initial, sampleRate), snap = true)
@@ -90,6 +91,7 @@ class BinauralPlayer(private val sampleRate: Int = 48000) {
         }
     }
 
+    @Synchronized
     fun stop() {
         running = false
         thread?.join(200)

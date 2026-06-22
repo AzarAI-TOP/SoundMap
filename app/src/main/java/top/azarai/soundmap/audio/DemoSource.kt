@@ -75,7 +75,7 @@ internal class ClickTrainSource(private val sampleRate: Int) : DemoSource {
     override fun read(out: FloatArray, n: Int) {
         for (i in 0 until n) {
             val ph = (t % period).toFloat()
-            out[i] = if (ph < tau * 6f) exp(-ph / tau) else 0f
+            out[i] = if (ph < tau * 6f) exp(-ph / tau) else 0f // click lasts 6 time-constants (decays to exp(-6) ≈ 0.0025)
             t++
         }
     }
