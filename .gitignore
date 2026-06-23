@@ -5,3 +5,9 @@ app/build/
 local.properties
 *.log
 .superpowers/
+
+# Signing — never commit keys or passwords
+keystore.properties
+keystore/
+*.jks
+*.keystore
