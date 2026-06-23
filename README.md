@@ -12,6 +12,10 @@ and hear it move around your head in real time.
 
 > Use headphones (or earbuds) for the spatial effect. Speakers won't reproduce it.
 
+<p align="center">
+  <img src="docs/images/screenshot.png" alt="SoundMap UI — clock dial with the sound placed front-right" width="300">
+</p>
+
 ## Why it works this way
 
 The original goal was a system-wide effect applied to other apps' audio. On
